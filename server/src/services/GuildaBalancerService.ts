@@ -112,7 +112,6 @@ export class GuildaBalancerService {
 
         jogadoresSobrando.push(...guerreiro, ...mago, ...arqueiro, ...clerigos);
 
-        //this.balancearJogadoresRemanescentes(jogadoresSobrando, guildas, guildSize);
 
         this.ajustarDiferencaDeXP(guildas, guildSize, xp_range);
 
@@ -120,60 +119,44 @@ export class GuildaBalancerService {
 
     }
 
-    /*  private static balancearJogadoresRemanescentes(jogadoresRemanescentes: Jogador[], guildas: Guilda[], guild_size: number) {
-         for (const jogador of jogadoresRemanescentes) {
- 
-             // Encontrar guilda com espaço
-             const guildSlot = guildas.find((guild) => guild.jogadores.length < guild_size);
-             if (guildSlot) {
-                 guildSlot.jogadores.push(jogador);
-                 guildSlot.totalXP += jogador.xp;
-             }
- 
-         }
- 
-     } */
 
     private static ajustarDiferencaDeXP(guildas: Guilda[], guild_size: number, xp_range: number) {
         let maxXP = Math.max(...guildas.map((g) => g.totalXP));
         let minXP = Math.min(...guildas.map((g) => g.totalXP));
         let iteration = 0;
-        const maxIteration = 100;
+        let range = xp_range
+        const maxIteration = 200;
 
 
-        while (maxXP - minXP > xp_range) {
-
+        while (maxXP - minXP > range) {
             iteration++;
 
             if (iteration > maxIteration) {
-                console.warn("Limite de iterações atingido, impossível balancear XP com o range", xp_range);
-                throw new Error(`Limite de iterações atingido, impossível balancear XP com o range:${xp_range}`)
+                console.warn("Limite de iterações atingido, impossível balancear XP com o range", range);
+                range += 10;
+                //throw new Error(`Limite de iterações atingido, impossível balancear XP com o range:${xp_range}`)
 
             }
             const richestGuild = guildas.find((guilda) => guilda.totalXP === maxXP)!;
             const poorestGuild = guildas.find((guilda) => guilda.totalXP === minXP)!;
 
-            const bestSwap = this.findBestSwap(richestGuild, poorestGuild, guild_size);
+            const melhorJogador = this.findBestSwap(richestGuild);
+            const piorJogador = this.findBestSwap(poorestGuild);
 
-            if (bestSwap) {
-                const { melhorJogador, piorJogador } = bestSwap
+            richestGuild.jogadores = richestGuild.jogadores.filter((j) => j.id != melhorJogador.id);
+            poorestGuild.jogadores = poorestGuild.jogadores.filter((j) => j.id != piorJogador.id);
 
-                richestGuild.jogadores = richestGuild.jogadores.filter((j) => j.id != melhorJogador.id);
-                poorestGuild.jogadores = poorestGuild.jogadores.filter((j) => j.id != piorJogador.id);
+            richestGuild.jogadores.push(piorJogador);
+            poorestGuild.jogadores.push(melhorJogador);
 
-                richestGuild.jogadores.push(piorJogador);
-                poorestGuild.jogadores.push(melhorJogador);
+            richestGuild.totalXP = richestGuild.jogadores.reduce((sum, jogador) => sum + jogador.xp, 0);
+            poorestGuild.totalXP = poorestGuild.jogadores.reduce((sum, jogador) => sum + jogador.xp, 0);
 
-                richestGuild.totalXP = richestGuild.jogadores.reduce((sum, jogador) => sum + jogador.xp, 0);
-                poorestGuild.totalXP = poorestGuild.jogadores.reduce((sum, jogador) => sum + jogador.xp, 0);
-
-                maxXP = Math.max(...guildas.map((g) => g.totalXP));
-                minXP = Math.min(...guildas.map((g) => g.totalXP));
+            maxXP = Math.max(...guildas.map((g) => g.totalXP));
+            minXP = Math.min(...guildas.map((g) => g.totalXP));
 
 
-            } else {
-                break;
-            }
+
 
 
 
@@ -183,57 +166,20 @@ export class GuildaBalancerService {
     }
 
 
-
-
-
-
-    private static isValidGuild(guild: Jogador[]): boolean {
-        const hasGuerreiro = guild.some((jogador) => jogador.class_id === ClassID.Guerreiro);
-        const hasClerigo = guild.some((jogador) => jogador.class_id === ClassID.Clerigo);
-        const hasRanged = guild.some(
+    private static findBestSwap(guild: Guilda): Jogador {
+        const hasGuerreiro = guild.jogadores.find((jogador) => jogador.class_id === ClassID.Guerreiro);
+        const hasClerigo = guild.jogadores.find((jogador) => jogador.class_id === ClassID.Clerigo);
+        const hasRanged = guild.jogadores.find(
             (jogador) => jogador.class_id === ClassID.Mago || jogador.class_id === ClassID.Arqueiro
         );
 
-        return hasGuerreiro && hasClerigo && hasRanged;
+        let jogadoresRemanescentes = guild.jogadores.filter((jogadores => jogadores.id === hasGuerreiro?.id));
+        jogadoresRemanescentes = guild.jogadores.filter((jogadores => jogadores.id === hasClerigo?.id));
+        jogadoresRemanescentes = guild.jogadores.filter((jogadores => jogadores.id === hasRanged?.id));
+
+        return jogadoresRemanescentes[0]
     }
 
-    private static findBestSwap(richestGuild: Guilda, poorestGuild: Guilda, guild_size: number) {
-        let bestSwap: { melhorJogador: Jogador; piorJogador: Jogador } | null = null;
-        let minXPDiference = 0;
 
-        for (const melhorJogador of richestGuild.jogadores) {
-            for (const piorJogador of poorestGuild.jogadores) {
-
-                // Troca de posição temporaria
-                const richestGuildTemp = richestGuild.jogadores.filter((j) => j.id != melhorJogador.id)
-                const poorestGuildTemp = poorestGuild.jogadores.filter((j) => j.id != piorJogador.id)
-
-                richestGuildTemp.push(piorJogador);
-                poorestGuildTemp.push(melhorJogador);
-
-                if (
-                    this.isValidGuild(richestGuildTemp) &&
-                    this.isValidGuild(poorestGuildTemp) &&
-                    richestGuildTemp.length <= guild_size &&
-                    poorestGuildTemp.length <= guild_size
-                ) {
-                    // Calculate new XP totals
-                    const richestGuildXP = richestGuildTemp.reduce((sum, j) => sum + j.xp, 0);
-                    const poorestGuildXP = poorestGuildTemp.reduce((sum, j) => sum + j.xp, 0);
-                    const newXPDifference = Math.abs(richestGuildXP - poorestGuildXP);
-
-                    // Check if this swap improves balance
-                    if (newXPDifference < minXPDiference) {
-                        minXPDiference = newXPDifference;
-                        bestSwap = { melhorJogador, piorJogador };
-                    }
-
-                }
-
-
-            }
-        }
-        return bestSwap;
-    }
 
 }
