@@ -5,6 +5,9 @@ const router = Router();
 // Listar todos os jogadores
 router.get("/", JogadorController.getAllJogadores)
 
+// Listar todos os jogadores confirmados
+router.get("/confirmados",JogadorController.findConfirmedPlayers);
+
 // Criar um jogador!
 router.post("/", JogadorController.createJogador)
 

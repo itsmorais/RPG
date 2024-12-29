@@ -7,7 +7,7 @@ const jogadorRepo = new JogadorRepository();
 
 export class GuildaBalancerService {
 
-    static async formarGuildas(guildSize: number, xp_range: number): Promise<Guilda[]> {
+    static async formarGuildas(guildSize: number): Promise<Guilda[]> {
         // 1 Buscar jogadores confirmados
         const jogadoresConfirmados = await jogadorRepo.findConfirmedPlayers();
 
@@ -18,7 +18,7 @@ export class GuildaBalancerService {
         const classes = this.agruparPorClasse(jogadoresClasse);
 
         // 4 Formar guildas : Implementar requerimentos e balanceamento de XP
-        return this.balancearGuildas(classes, guildSize, xp_range)
+        return this.balancearGuildas(classes, guildSize)
     }
 
 
@@ -71,7 +71,7 @@ export class GuildaBalancerService {
         return sortedClasses.length > 0 ? sortedClasses[0][1] : null;
     }
 
-    private static balancearGuildas(classes: Record<string, Jogador[]>, guildSize: number, xp_range: number): Guilda[] {
+    private static balancearGuildas(classes: Record<string, Jogador[]>, guildSize: number): Guilda[] {
         // Logica para formar guildas garantindo as classes e balanceamento de XP
 
         const { guerreiro, mago, arqueiro, clerigos } = classes;
@@ -113,18 +113,18 @@ export class GuildaBalancerService {
         jogadoresSobrando.push(...guerreiro, ...mago, ...arqueiro, ...clerigos);
 
 
-        this.ajustarDiferencaDeXP(guildas, guildSize, xp_range);
+        this.ajustarDiferencaDeXP(guildas, guildSize);
 
         return guildas;
 
     }
 
 
-    private static ajustarDiferencaDeXP(guildas: Guilda[], guild_size: number, xp_range: number) {
+    private static ajustarDiferencaDeXP(guildas: Guilda[], guild_size: number) {
         let maxXP = Math.max(...guildas.map((g) => g.totalXP));
         let minXP = Math.min(...guildas.map((g) => g.totalXP));
         let iteration = 0;
-        let range = xp_range
+        let range = 10;
         const maxIteration = 200;
 
 

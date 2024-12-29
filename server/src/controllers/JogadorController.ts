@@ -1,12 +1,19 @@
 import { Request, Response } from "express";
 import { JogadorRepository } from "../repositories/JogadorRepository";
+import { ClassID } from "../models/Classe";
+import { Jogador } from "../models/Jogador";
 
 const jogadorRepo = new JogadorRepository();
 
 export class JogadorController {
+
+
     static async getAllJogadores(req: Request, res: Response) {
         try {
-            const jogadores = await jogadorRepo.findAll();
+            let jogadores = await jogadorRepo.findAll();
+            jogadores = JogadorController.findClasses(jogadores)
+
+
             res.status(200).json(jogadores);
         } catch (error) {
             res.status(500).json({ error: "Erro ao buscar jogadores" });
@@ -30,14 +37,48 @@ export class JogadorController {
 
     static async confirmaJogador(req: Request, res: Response) {
         const { id } = req.params;
+        const { confirmado } = req.body
 
         try {
-            await jogadorRepo.update(Number(id), { confirmed: true });
-            res.status(201).json({ message: "Jogador confirmado!" });
+            const novoStatus = Number(confirmado) === 1 ? false : true
+
+           const jogador =  await jogadorRepo.update(Number(id), { confirmed: novoStatus });
+           console.log("ATUALIZADOOO STATUS:",jogador)
+            res.status(201).json({ message: "Status alterado com sucesso!" });
         } catch (error) {
             res.status(400).json({ error: 'Erro ao confirmar jogador' });
         }
     }
+
+    static async findConfirmedPlayers(req: Request, res: Response) {
+        try {
+
+            let jogadoresConfirmados = await jogadorRepo.findConfirmedPlayers();
+            jogadoresConfirmados = JogadorController.findClasses(jogadoresConfirmados)
+
+            res.status(200).json(jogadoresConfirmados);
+
+        } catch (error: any) {
+            res.status(400).json({ error: 'Erro ao buscar jogadores confirmados' });
+
+        }
+    }
+
+    private static findClasses(jogadores: Jogador[]): Jogador[] {
+        const classMap = {
+            [ClassID.Guerreiro]: "Guerreiro",
+            [ClassID.Mago]: "Mago",
+            [ClassID.Arqueiro]: "Arqueiro",
+            [ClassID.Clerigo]: "Clérigo",
+        };
+
+        return jogadores.map((jogador) => ({
+            ...jogador,
+            class_name: classMap[jogador.class_id as ClassID],
+        }));
+
+    }
+
 
 
 }
