@@ -4,22 +4,37 @@ import GuildaForm from "../components/GuildaForm";
 import api, { getGuildas } from "../service/api";
 import { useNavigate } from "react-router-dom";
 import { Jogador } from "../interfaces/jogador";
+import { Guilda } from "../interfaces/guilda";
 import JogadoresTable from "../components/JogadoresTable";
 
 const Home: React.FC = () => {
-    const [guilds, setGuilds] = useState([]);
+    const [guilds, setGuilds] = useState<Guilda[]>([]);
     const [jogadoresAtivos, setJogadoresAtivos] = useState<Jogador[]>([])
+    const [jogadoresRemanescentes, setJogadoresRemanescentes] = useState<Jogador[]>([]);
+    const [xpGap, setXpGap] = useState(0);
 
     const navigation = useNavigate()
 
     const handleFormSubmit = async (guildSize: number) => {
         try {
-            const data = await getGuildas(guildSize);
+            const data: Guilda[] = await getGuildas(guildSize);
             setGuilds(data);
+
+            const totalXP = data.map((guilda) => guilda.totalXP);
+            const maiorXP = Math.max(...totalXP);
+            const menorXP = Math.min(...totalXP);
+
+            setXpGap(maiorXP - menorXP);
+
+
+            const jogadoresSelecionadosIds = data.flatMap((guilda) => guilda.jogadores.map((j) => j.id))
+            setJogadoresRemanescentes(jogadoresAtivos.filter((jogador) => !jogadoresSelecionadosIds.includes(jogador.id)));
+
+
         } catch (error: any) {
             console.error("Error generating guilds:", error.response?.data || error.message);
         }
-        
+
     };
 
     const handleCleanGuildas = () => {
@@ -46,7 +61,7 @@ const Home: React.FC = () => {
 
                 <GuildaForm onSubmit={handleFormSubmit} handleCleanGuildas={handleCleanGuildas} />
 
-            
+
 
                 <div className="container mx-auto  w-1/2">
                     {/*                 CADASTRAR JOGADORES BUTTON
@@ -69,9 +84,20 @@ const Home: React.FC = () => {
                 </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-5">
                 {guilds.length > 0 ? (
-                    <GuildaDisplay guildas={guilds} />
+                    <div className="">
+                        <h1 className="mt-6 text-2xl font-bold">Guildas formadas:{guilds.length}</h1>
+                        <p className="text-gray-600 mb-3">Maior diferença de XP entre guildas: <strong>{xpGap}</strong></p>
+
+
+                        <GuildaDisplay guildas={guilds} />
+                        <div className="mt-5">
+                            <h1 className="my-6 text-2xl font-bold">Jogadores ativos remanescentes:{jogadoresRemanescentes.length}</h1>
+                            < JogadoresTable jogadores={jogadoresRemanescentes} tableHeight={300} />
+                        </div>
+                    </div>
+
                 ) : (
                     <>
                         <div className="w-full">

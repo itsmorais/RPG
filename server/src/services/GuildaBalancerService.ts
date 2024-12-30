@@ -75,7 +75,7 @@ export class GuildaBalancerService {
         // Logica para formar guildas garantindo as classes e balanceamento de XP
 
         const { guerreiro, mago, arqueiro, clerigos } = classes;
-        const guildas: Guilda[] = [];
+        let guildas: Guilda[] = [];
         const jogadoresSobrando: Jogador[] = [];
 
         // Inicializando guida com o requerimento mínimo
@@ -112,8 +112,11 @@ export class GuildaBalancerService {
 
         jogadoresSobrando.push(...guerreiro, ...mago, ...arqueiro, ...clerigos);
 
+        guildas = guildas.filter((jogadores)=> jogadores.jogadores.length === guildSize);
 
         this.ajustarDiferencaDeXP(guildas, guildSize);
+        console.log("GUILDAS APÓSSSSSSS AO AJUSTE DE XP",guildas)
+
 
         return guildas;
 
