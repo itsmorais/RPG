@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Jogador } from "../interfaces/jogador";
 import { RPGClass } from "../interfaces/classes";
-import api from "../service/api";
+import { getClasses } from "../service/classeService";
+import { cadastrarJogador } from "../service/jogadorService";
 
 const CadastrarJogador: React.FC = () => {
     const [name, setName] = useState("");
@@ -14,8 +15,8 @@ const CadastrarJogador: React.FC = () => {
         // Buscar as classes
         const fetchClasses = async () => {
             try {
-                const response = await api.get<RPGClass[]>("/classes");
-                setClasses(response.data);
+                const response = await getClasses();
+                setClasses(response);
             } catch (error) {
                 console.error("Error fetching classes:", error);
             }
@@ -39,9 +40,9 @@ const CadastrarJogador: React.FC = () => {
         };
 
         try {
-            const response = await api.post("/jogadores", novoJogador);
+            const response = await cadastrarJogador(novoJogador)
             if (response.status === 201) {
-                setMessage(`Jogador "${name}-Código:${response.data.id}" cadastrado com sucesso!`);
+                setMessage(`Jogador "${name}- Código:${response.data.id}" cadastrado com sucesso!`);
                 setName("");
                 setClassId(null);
                 setXp(1);
@@ -56,9 +57,9 @@ const CadastrarJogador: React.FC = () => {
         <div className="container mx-auto p-4">
             <h1 className="text-2xl font-bold mb-4">Cadastrar Jogador</h1>
 
-            {message && <p className="mb-4 text-center text-blue-600">{message}</p>}
+            {message && <p className="mb-4  text-blue-600">{message}</p>}
 
-            <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
+            <form onSubmit={handleSubmit} className="space-y-4 max-w-md mt-6">
                 <div>
                     <label className="block text-sm font-medium">Nome do Jogador</label>
                     <input

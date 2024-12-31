@@ -13,7 +13,6 @@ export class JogadorController {
             let jogadores = await jogadorRepo.findAll();
             jogadores = JogadorController.findClasses(jogadores)
 
-
             res.status(200).json(jogadores);
         } catch (error) {
             res.status(500).json({ error: "Erro ao buscar jogadores" });
@@ -42,8 +41,8 @@ export class JogadorController {
         try {
             const novoStatus = Number(confirmado) === 1 ? false : true
 
-           const jogador =  await jogadorRepo.update(Number(id), { confirmed: novoStatus });
-           console.log("ATUALIZADOOO STATUS:",jogador)
+            await jogadorRepo.update(Number(id), { confirmed: novoStatus });
+
             res.status(201).json({ message: "Status alterado com sucesso!" });
         } catch (error) {
             res.status(400).json({ error: 'Erro ao confirmar jogador' });

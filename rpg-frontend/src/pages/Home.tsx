@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import GuildaDisplay from "../components/GuildaDisplay";
 import GuildaForm from "../components/GuildaForm";
-import api, { getGuildas } from "../service/api";
+import { getGuildas } from "../service/api";
 import { useNavigate } from "react-router-dom";
 import { Jogador } from "../interfaces/jogador";
 import { Guilda } from "../interfaces/guilda";
 import JogadoresTable from "../components/JogadoresTable";
+import { getJogadoresConfirmados } from "../service/jogadorService";
+
 
 const Home: React.FC = () => {
     const [guilds, setGuilds] = useState<Guilda[]>([]);
@@ -39,14 +41,15 @@ const Home: React.FC = () => {
 
     const handleCleanGuildas = () => {
         setGuilds([]);
+        setJogadoresRemanescentes([]);
     }
 
     useEffect(() => {
         // Buscar jogadores ativos
         const fetchClasses = async () => {
             try {
-                const response = await api.get<Jogador[]>("/jogadores/confirmados");
-                setJogadoresAtivos(response.data);
+                const response = await getJogadoresConfirmados()
+                setJogadoresAtivos(response);
             } catch (error) {
                 console.error("Error fetching classes:", error);
             }

@@ -11,11 +11,6 @@ export const getGuildas = async (guildSize: number) => {
     return response.data
 }
 
-export const confirmJogador = async (id: number,confirmed:number) => {
-    const response = await api.patch(`/jogadores/${id}/confirm`,{
-        confirmado:confirmed
-    })
-    return response.data
-}
+
 
 export default api;

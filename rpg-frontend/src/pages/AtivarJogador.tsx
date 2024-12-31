@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import api, { confirmJogador } from "../service/api";
 import { Jogador } from "../interfaces/jogador";
 import JogadoresTable from "../components/JogadoresTable";
+import { getJogadores, confirmJogador } from "../service/jogadorService";
 
 const AtivarJogador: React.FC = () => {
-    const [jogadoresAtivos, setJogadoresAtivos] = useState<Jogador[]>([])
+    const [jogadores, setJogadores] = useState<Jogador[]>([])
     const [statusAlterado, setStatusAlterado] = useState(false);
 
 
@@ -13,8 +13,8 @@ const AtivarJogador: React.FC = () => {
         // Buscar todos os jogadores
         const fetchClasses = async () => {
             try {
-                const response = await api.get<Jogador[]>("/jogadores");
-                setJogadoresAtivos(response.data);
+                const jogadores = await getJogadores();
+                setJogadores(jogadores);
             } catch (error) {
                 console.error("Error fetching classes:", error);
             }
@@ -41,9 +41,9 @@ const AtivarJogador: React.FC = () => {
 
     return (
         <div className="container mx-auto p-4">
-            <h1 className="my-6 text-2xl font-bold">Total de jogadores:{jogadoresAtivos.length}</h1>
+            <h1 className="my-6 text-2xl font-bold">Total de jogadores:{jogadores.length}</h1>
             <p className="text-gray-600 mb-3">Clique sobre um jogador para alterar o status.</p>
-            <JogadoresTable jogadores={jogadoresAtivos} ativadorJogador={handleJogador} tableHeight={700} />
+            <JogadoresTable jogadores={jogadores} ativadorJogador={handleJogador} tableHeight={700} />
         </div>
     );
 };
