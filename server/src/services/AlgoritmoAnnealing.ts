@@ -3,39 +3,39 @@ import { Guilda } from "../models/Guilda";
 import { ClassID } from "../models/Classe";
 
 export class AlgoritmoAnnealing {
-  static async balanceGuilds(players: Jogador[], guildSize: number): Promise<Guilda[]> {
+  static async balanceGuilds(jogadores: Jogador[], guildSize: number): Promise<Guilda[]> {
     const numExecutions = 1000; // Número de execuções para buscar o melhor resultado
     const results = await Promise.all(
       Array.from({ length: numExecutions }).map(() =>
-        this.runSingleExecution(players, guildSize)
+        this.runSingleExecution(jogadores, guildSize)
       )
     );
 
     // Retorna a configuração com a menor diferença de XP
     return results.reduce((best, current) =>
-      this.calculateXPDifference(current) < this.calculateXPDifference(best)
+      this.calculateXPDiff(current) < this.calculateXPDiff(best)
         ? current
         : best
     );
   }
 
-  private static async runSingleExecution(players: Jogador[], guildSize: number): Promise<Guilda[]> {
-    const numGuilds = Math.floor(players.length / guildSize);
+  private static async runSingleExecution(jogadores: Jogador[], guildSize: number): Promise<Guilda[]> {
+    const numGuilds = Math.floor(jogadores.length / guildSize);
     if (numGuilds === 0) {
-      throw new Error("Not enough players to form a single guild.");
+      throw new Error("Não há jogadores suficientes para preencher uma guilda.");
     }
 
     const guilds: Guilda[] = [];
-    const remainingPlayers: Jogador[] = [...players];
+    const jogadoresSobrando: Jogador[] = [...jogadores];
 
     // Helper: Formar guildas com requisitos mínimos
-    const initializeGuildsWithMinimumClasses = () => {
+    const initGuilda = () => {
       for (let i = 0; i < numGuilds; i++) {
         const guild: Guilda = { jogadores: [], totalXP: 0 };
 
-        const guerreiro = remainingPlayers.find((j) => j.class_id === ClassID.Guerreiro);
-        const clerigo = remainingPlayers.find((j) => j.class_id === ClassID.Clerigo);
-        const ranged = remainingPlayers.find(
+        const guerreiro = jogadoresSobrando.find((j) => j.class_id === ClassID.Guerreiro);
+        const clerigo = jogadoresSobrando.find((j) => j.class_id === ClassID.Clerigo);
+        const ranged = jogadoresSobrando.find(
           (j) => j.class_id === ClassID.Mago || j.class_id === ClassID.Arqueiro
         );
 
@@ -48,8 +48,8 @@ export class AlgoritmoAnnealing {
 
         // Remove os jogadores usados dos jogadores restantes
         [guerreiro, clerigo, ranged].forEach((player) => {
-          const index = remainingPlayers.indexOf(player);
-          if (index !== -1) remainingPlayers.splice(index, 1);
+          const index = jogadoresSobrando.indexOf(player);
+          if (index !== -1) jogadoresSobrando.splice(index, 1);
         });
 
         guilds.push(guild);
@@ -57,10 +57,10 @@ export class AlgoritmoAnnealing {
     };
 
     // Helper: Preencher guildas com os jogadores restantes
-    const fillGuilds = () => {
+    const preencherGuilda = () => {
       for (const guild of guilds) {
-        while (guild.jogadores.length < guildSize && remainingPlayers.length > 0) {
-          const nextPlayer = remainingPlayers.shift();
+        while (guild.jogadores.length < guildSize && jogadoresSobrando.length > 0) {
+          const nextPlayer = jogadoresSobrando.shift();
           if (nextPlayer) {
             guild.jogadores.push(nextPlayer);
             guild.totalXP += nextPlayer.xp;
@@ -75,12 +75,12 @@ export class AlgoritmoAnnealing {
       let temperature = 100;
       const coolingRate = 0.95;
 
-      const calculateXPDifference = (): number => {
+      const calculateXPDiff = (): number => {
         const xpValues = guilds.map((g) => g.totalXP);
         return Math.max(...xpValues) - Math.min(...xpValues);
       };
 
-      const swapPlayers = () => {
+      const swapJogadores = () => {
         const guildAIndex = Math.floor(Math.random() * guilds.length);
         const guildBIndex = Math.floor(Math.random() * guilds.length);
 
@@ -115,11 +115,11 @@ export class AlgoritmoAnnealing {
       };
 
       for (let i = 0; i < maxIterations; i++) {
-        const currentDiff = calculateXPDifference();
+        const currentDiff = calculateXPDiff();
 
-        swapPlayers();
+        swapJogadores();
 
-        const newDiff = calculateXPDifference();
+        const newDiff = calculateXPDiff();
         const delta = newDiff - currentDiff;
 
         if (delta < 0 || Math.random() < Math.exp(-delta / temperature)) {
@@ -141,8 +141,8 @@ export class AlgoritmoAnnealing {
     };
 
     // Inicialização estratégica
-    initializeGuildsWithMinimumClasses();
-    fillGuilds();
+    initGuilda();
+    preencherGuilda();
 
     // Refinamento para balancear XP
     refineXPBalance();
@@ -151,7 +151,7 @@ export class AlgoritmoAnnealing {
     return guilds.filter(isValidGuild);
   }
 
-  private static calculateXPDifference(guilds: Guilda[]): number {
+  private static calculateXPDiff(guilds: Guilda[]): number {
     const xpValues = guilds.map((g) => g.totalXP);
     return Math.max(...xpValues) - Math.min(...xpValues);
   }
